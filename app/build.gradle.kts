@@ -42,6 +42,10 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.ui)

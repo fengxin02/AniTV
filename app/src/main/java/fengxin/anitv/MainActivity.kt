@@ -4,11 +4,15 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlin.concurrent.thread
 
-// 引入我们的自己写的模块
 import fengxin.anitv.network.AnimeParser
 import fengxin.anitv.ui.screens.HomeScreen
+import fengxin.anitv.ui.screens.PlayerScreen
 
 class MainActivity : ComponentActivity() {
     private val TAG = "AniTV"
@@ -16,26 +20,42 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 挂载 Compose 瀑布流界面
         setContent {
-            HomeScreen { clickedAnime ->
-                Log.d(TAG, "你用遥控器点击了: ${clickedAnime.title}")
+            // 这个变量用来记录当前要播放的视频链接，如果为空，就显示主页
+            var currentPlayingUrl by remember { mutableStateOf<String?>(null) }
 
-                // 如果这个动漫有配置播放链接，我们就去解析它
-                if (clickedAnime.playUrl.isNotEmpty()) {
-                    // 安卓规定：网络请求必须在子线程运行
-                    thread {
-                        // 呼叫我们刚刚拆分出去的单例爬虫工具！
-                        val m3u8Url = AnimeParser.parseM3u8Url(clickedAnime.playUrl)
+            if (currentPlayingUrl == null) {
+                // --- 显示主页瀑布流 ---
+                HomeScreen { clickedAnime ->
+                    Log.d(TAG, "你用遥控器点击了: ${clickedAnime.title}")
 
-                        if (m3u8Url != null) {
-                            Log.d(TAG, "解析成功！准备把链接交给播放器去播放：\n$m3u8Url")
-                            // TODO: 下一步就是带着这串链接，跳到播放器页面！
-                        } else {
-                            Log.e(TAG, "解析失败了，可能是链接不对或者防盗链更新了。")
+                    if (clickedAnime.playUrl.isNotEmpty()) {
+                        thread {
+                            val m3u8Url = AnimeParser.parseM3u8Url(clickedAnime.playUrl)
+                            if (m3u8Url != null) {
+                                Log.d(TAG, "解析成功！准备播放：$m3u8Url")
+                                // 抓取成功后，在主线程更新 UI 状态，触发播放界面
+                                //val appleTestStream = "https://ai.girigirilove.net/zijian/oldanime/2026/04/cht/KamiinaBotanYoeruSugatawaYurinoHanaCHT/05/playlist.m3u8"
+                                runOnUiThread {
+                                    currentPlayingUrl = m3u8Url
+                                     //currentPlayingUrl = appleTestStream
+                                }
+                            } else {
+                                Log.e(TAG, "解析失败，无法播放。")
+                            }
                         }
                     }
                 }
+            } else {
+                // --- 显示全屏播放器 ---
+                // 传入刚才抓取到的 m3u8 直链
+                PlayerScreen(
+                    m3u8Url = currentPlayingUrl!!,
+                    onBack = {
+                        // 当用户在播放界面按返回键时，把链接清空，就会自动切回主页
+                        currentPlayingUrl = null
+                    }
+                )
             }
         }
     }

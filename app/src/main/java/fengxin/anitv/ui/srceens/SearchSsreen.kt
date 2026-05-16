@@ -76,7 +76,7 @@ fun SearchScreen(onBack: () -> Unit, onAnimeClick: (Anime) -> Unit) {
 
         // 搜索状态与结果展示
         if (isSearching) {
-            Text("🚀 正在通过隐秘通道搜索...", color = Color.White, fontSize = 20.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Text(" 正在通过隐秘通道搜索...", color = Color.White, fontSize = 20.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
         } else if (hasSearched && searchResults.isEmpty()) {
             Text("😢 没有找到相关动漫，换个关键字试试吧？", color = Color.Gray, fontSize = 20.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {

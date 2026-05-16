@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
+import androidx.tv.material3.ButtonDefaults
 
 // 引入刚才分出去的数据模型
 import fengxin.anitv.model.Anime
@@ -33,9 +34,15 @@ fun HomeScreen(categories: List<Category>, onSearchClick: () -> Unit, onAnimeCli
         item {
             androidx.tv.material3.Button(
                 onClick = onSearchClick,
-                modifier = Modifier.padding(start = 32.dp, bottom = 24.dp)
+                modifier = Modifier.padding(start = 32.dp, bottom = 24.dp),
+                colors = ButtonDefaults.colors(
+                    containerColor = Color.White.copy(alpha = 0.1f),
+                    contentColor = Color.White,
+                    focusedContainerColor = Color.White,
+                    focusedContentColor = Color.Black
+                )
             ) {
-                Text("🔍 搜索动漫", fontSize = 18.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                Text("搜索动漫", fontSize = 18.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
         }
         items(categories.size) { index ->

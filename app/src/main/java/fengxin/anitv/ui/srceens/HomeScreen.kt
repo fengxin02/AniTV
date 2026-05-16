@@ -18,16 +18,20 @@ import androidx.tv.material3.Text
 // 引入刚才分出去的数据模型
 import fengxin.anitv.model.Anime
 import fengxin.anitv.model.sampleData
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import fengxin.anitv.model.Category
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun HomeScreen(onAnimeClick: (Anime) -> Unit) {
+// 注意这里：我们将外部传入的动态数据替换掉原来的 sampleData
+fun HomeScreen(categories: List<Category>, onAnimeClick: (Anime) -> Unit) {
     LazyColumn (
         modifier = Modifier.fillMaxSize().background(Color(0xFF141414)).padding(top = 24.dp, bottom = 24.dp),
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        items(sampleData.size) { index ->
-            val category = sampleData[index]
+        items(categories.size) { index ->
+            val category = categories[index]
             Column(modifier = Modifier.padding(bottom = 24.dp)) {
                 Text(
                     text = category.title,
@@ -41,14 +45,30 @@ fun HomeScreen(onAnimeClick: (Anime) -> Unit) {
                     items(category.animeList.size) { animeIndex ->
                         val anime = category.animeList[animeIndex]
                         Card(
-                            onClick = { onAnimeClick(anime) }, // 绑定点击事件
+                            onClick = { onAnimeClick(anime) },
                             modifier = Modifier.width(150.dp).height(220.dp)
                         ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize().background(Color(0xFF2F2F2F)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = anime.title, color = Color.LightGray, modifier = Modifier.padding(8.dp))
+                            Box(modifier = Modifier.fillMaxSize().background(Color(0xFF2F2F2F))) {
+                                // ✨ 魔法在这里！使用 Coil 自动加载网络图片 ✨
+                                if (anime.coverUrl.isNotEmpty()) {
+                                    AsyncImage(
+                                        model = anime.coverUrl,
+                                        contentDescription = anime.title,
+                                        contentScale = ContentScale.Crop, // 自动裁剪填充卡片
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+
+                                // 底部加上半透明的黑色渐变，防止图片太亮看不清字
+                                Box(modifier = Modifier.fillMaxSize().background(Color(0x66000000)))
+
+                                // 动漫名字显示在左下角
+                                Text(
+                                    text = anime.title,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp)
+                                )
                             }
                         }
                     }

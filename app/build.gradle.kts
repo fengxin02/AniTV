@@ -45,6 +45,10 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
+    // HTML 解析神器 Jsoup
+    implementation("org.jsoup:jsoup:1.17.2")
+    // Compose 图片加载神器 Coil
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -55,6 +59,7 @@ dependencies {
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.litert.support.api)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)

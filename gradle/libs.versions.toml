@@ -4,8 +4,8 @@ kotlin = "2.0.21"
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
 composeBom = "2024.09.00"
-tvFoundation = "1.0.0-alpha07"
-tvMaterial = "1.0.0-alpha07"
+tvFoundation = "1.0.0"      # ← 稳定版
+tvMaterial = "1.1.0"        # ← 稳定版
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.1"
 

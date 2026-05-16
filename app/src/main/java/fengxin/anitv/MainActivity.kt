@@ -14,8 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.foundation.lazy.list.TvLazyColumn
-import androidx.tv.foundation.lazy.list.TvLazyRow
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.tv.material3.Card
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
@@ -108,7 +109,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun HomeScreen(onAnimeClick: (Anime) -> Unit) {
-    TvLazyColumn(
+    LazyColumn (
         modifier = Modifier.fillMaxSize().background(Color(0xFF141414)).padding(top = 24.dp, bottom = 24.dp),
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
@@ -120,7 +121,7 @@ fun HomeScreen(onAnimeClick: (Anime) -> Unit) {
                     color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 32.dp, bottom = 12.dp)
                 )
-                TvLazyRow(
+                LazyRow (
                     contentPadding = PaddingValues(start = 32.dp, end = 32.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {

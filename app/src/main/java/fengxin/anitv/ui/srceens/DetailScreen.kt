@@ -23,7 +23,9 @@ import fengxin.anitv.model.Episode
 import fengxin.anitv.network.AnimeParser
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.lazy.LazyColumn
-
+import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.Border
+import androidx.tv.material3.Glow
 @Composable
 fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode) -> Unit) {
     // 监听返回键
@@ -94,7 +96,7 @@ fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode)
                             item {
                                 Text(
                                     text = "▶ ${playlist.name}",
-                                    color = Color(0xFFE50914), // 类似 Netflix 的红色点缀
+                                    color = Color(0xFFE50914),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
@@ -113,9 +115,25 @@ fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode)
                                         Button(
                                             onClick = { onPlayEpisode(episode) },
                                             // 固定宽度，让排版像强迫症一样整齐
-                                            modifier = Modifier.width(80.dp)
+                                            modifier = Modifier.width(80.dp),
+
+                                            colors = ButtonDefaults.colors(
+                                                // 1. 普通状态：使用你喜欢的那张图里的深灰色 (#323232)
+                                                containerColor = Color(0xFF323232),
+                                                contentColor = Color.White,
+
+                                                // 2. 选中（获焦）状态：变成纯白色，文字变黑，对比度极高，一眼就能看出在哪
+                                                focusedContainerColor = Color.White,
+                                                focusedContentColor = Color.Black,
+
+                                                // 3. 按下状态：稍微深一点的灰色
+                                                pressedContainerColor = Color.LightGray,
+                                                pressedContentColor = Color.Black
+                                            )
+
                                         ) {
-                                            Text(text = episode.title, color = Color.White)
+                                            // 注意：内部 Text 的颜色已经由 colors 统一接管了，不需要再单独写 Color.White
+                                            Text(text = episode.title)
                                         }
                                     }
                                 }

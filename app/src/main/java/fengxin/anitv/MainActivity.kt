@@ -20,10 +20,10 @@ import fengxin.anitv.model.sampleData
 import androidx.compose.runtime.LaunchedEffect
 import fengxin.anitv.model.Anime
 import fengxin.anitv.ui.screens.DetailScreen
+import fengxin.anitv.ui.screens.SearchScreen
 
-// 定义三个状态
-enum class ScreenState { HOME, DETAIL, PLAYER }
 
+enum class ScreenState { HOME, SEARCH, DETAIL, PLAYER }
 class MainActivity : ComponentActivity() {
     private val TAG = "AniTV"
 
@@ -52,11 +52,20 @@ class MainActivity : ComponentActivity() {
             // 根据状态切换 UI
             when (currentScreen) {
                 ScreenState.HOME -> {
-                    HomeScreen(categories = homeCategories) { clickedAnime ->
+                    HomeScreen(categories = homeCategories, onSearchClick = { currentScreen = ScreenState.SEARCH }) { clickedAnime ->
                         Log.d(TAG, "点击了海报，进入详情页: ${clickedAnime.detailUrl}")
                         selectedAnime = clickedAnime
                         currentScreen = ScreenState.DETAIL // 切换到详情页
                     }
+                }
+                ScreenState.SEARCH -> {
+                    SearchScreen(
+                        onBack = { currentScreen = ScreenState.HOME }, // 返回退回主页
+                        onAnimeClick = { clickedAnime ->
+                            selectedAnime = clickedAnime
+                            currentScreen = ScreenState.DETAIL // 在搜索页点击海报，直接跳详情页！
+                        }
+                    )
                 }
 
                 ScreenState.DETAIL -> {

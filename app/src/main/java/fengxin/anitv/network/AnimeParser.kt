@@ -12,12 +12,16 @@ import java.util.regex.Pattern
 import fengxin.anitv.model.Category
 import fengxin.anitv.model.Episode
 import fengxin.anitv.model.Playlist
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.URLEncoder
 
 // 使用 object 关键字，让它成为一个可以随时调用的单例工具类
 object AnimeParser {
     private const val TAG = "AnimeParser"
     // 复用同一个 OkHttpClient 可以节省资源和时间
     private val client = OkHttpClient()
+    var cfCookie: String = ""
 
     // 传入播放页 URL，返回解析好的 m3u8 直链（如果失败返回 null）
     fun parseM3u8Url(targetUrl: String): String? {
@@ -138,7 +142,7 @@ object AnimeParser {
     }
 
 
-    // 新增：抓取详情页和选集列表
+    //抓取详情页和选集列表
     fun fetchAnimeDetail(detailUrl: String): AnimeDetail? {
         Log.d(TAG, "🚀 开始抓取详情页: $detailUrl")
         val request = Request.Builder()
@@ -225,4 +229,63 @@ object AnimeParser {
         }
         return null
     }
+    fun searchAnime(keyword: String): List<Anime> {
+        Log.d(TAG, "🚀 开始 AJAX 搜索动漫: $keyword")
+        val animeList = mutableListOf<Anime>()
+
+        try {
+            // 1. 编码中文关键字
+            val encodedKeyword = URLEncoder.encode(keyword, "UTF-8")
+            // 2. 瞄准网站的隐藏 JSON 接口
+            val targetUrl = "https://ani.girigirilove.com/index.php/ajax/suggest?mid=1&wd=$encodedKeyword"
+
+            val request = Request.Builder()
+                .url(targetUrl)
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
+                // ⚠️ 极其重要：告诉服务器我们是真实的 AJAX 请求，这样它才不会给我们弹验证码！
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("Referer", "https://ani.girigirilove.com/")
+                .build()
+
+            val response = client.newCall(request).execute()
+            val jsonString = response.body?.string() ?: return emptyList()
+
+            Log.d(TAG, "📦 收到 JSON 数据: $jsonString")
+
+            // 3. 解析 MacCMS 吐出来的 JSON 数据
+            // 通常格式是：{"list": [{"name": "动漫名", "pic": "/海报.jpg", "url": "/详情页.html"}]}
+
+            val jsonObject = JSONObject(jsonString)
+            // 尝试获取 list 数组，如果没有则备用一个空数组防止崩溃
+            val jsonArray = jsonObject.optJSONArray("list") ?: JSONArray()
+
+            for (i in 0 until jsonArray.length()) {
+                val item = jsonArray.getJSONObject(i)
+
+                // 1. 抓取标题和图片
+                val title = item.optString("name").ifEmpty { item.optString("vod_name") }
+                var coverUrl = item.optString("pic").ifEmpty { item.optString("vod_pic") }
+
+                // ✨ 2. 核心修复：抓取视频的 ID，并手动拼接出详情页的 URL！
+                val vidId = item.optString("id")
+                val detailUrl = if (vidId.isNotEmpty()) {
+                    "https://ani.girigirilove.com/GV$vidId/"
+                } else {
+                    ""
+                }
+
+                if (title.isNotEmpty() && detailUrl.isNotEmpty()) {
+                    val fullCoverUrl = if (coverUrl.startsWith("http") || coverUrl.isEmpty()) coverUrl else "https://ani.girigirilove.com$coverUrl"
+
+                    animeList.add(Anime(title, fullCoverUrl, detailUrl))
+                }
+            }
+            Log.d(TAG, "🎉 AJAX搜索成功！找到 ${animeList.size} 个结果")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "💥 AJAX搜索发生错误: ${e.message}")
+        }
+        return animeList
+    }
+
 }

@@ -25,11 +25,19 @@ import fengxin.anitv.model.Category
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 // 注意这里：我们将外部传入的动态数据替换掉原来的 sampleData
-fun HomeScreen(categories: List<Category>, onAnimeClick: (Anime) -> Unit) {
+fun HomeScreen(categories: List<Category>, onSearchClick: () -> Unit, onAnimeClick: (Anime) -> Unit) {
     LazyColumn (
         modifier = Modifier.fillMaxSize().background(Color(0xFF141414)).padding(top = 24.dp, bottom = 24.dp),
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
+        item {
+            androidx.tv.material3.Button(
+                onClick = onSearchClick,
+                modifier = Modifier.padding(start = 32.dp, bottom = 24.dp)
+            ) {
+                Text("🔍 搜索动漫", fontSize = 18.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            }
+        }
         items(categories.size) { index ->
             val category = categories[index]
             Column(modifier = Modifier.padding(bottom = 24.dp)) {
@@ -49,7 +57,6 @@ fun HomeScreen(categories: List<Category>, onAnimeClick: (Anime) -> Unit) {
                             modifier = Modifier.width(150.dp).height(220.dp)
                         ) {
                             Box(modifier = Modifier.fillMaxSize().background(Color(0xFF2F2F2F))) {
-                                // ✨ 魔法在这里！使用 Coil 自动加载网络图片 ✨
                                 if (anime.coverUrl.isNotEmpty()) {
                                     AsyncImage(
                                         model = anime.coverUrl,

@@ -50,7 +50,7 @@ app/src/main/java/fengxin/anitv/
 
 ## 电视端安装与调试指南
 
- *  Realease里面下载apk，使用u盘安装到电视即可
+ *  Releases里面下载apk，使用u盘安装到电视即可
 ---
 
 ##  隐私与合规性说明

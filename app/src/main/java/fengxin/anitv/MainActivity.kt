@@ -18,6 +18,12 @@ import fengxin.anitv.ui.screens.PlayerScreen
 import fengxin.anitv.model.Category
 import fengxin.anitv.model.sampleData
 import androidx.compose.runtime.LaunchedEffect
+import fengxin.anitv.model.Anime
+import fengxin.anitv.ui.screens.DetailScreen
+
+// 定义三个状态
+enum class ScreenState { HOME, DETAIL, PLAYER }
+
 class MainActivity : ComponentActivity() {
     private val TAG = "AniTV"
 
@@ -25,35 +31,65 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            var currentPlayingUrl by remember { mutableStateOf<String?>(null) }
-            // 新增：保存首页分类数据的变量
-            var homeCategories by remember { mutableStateOf<List<Category>>(sampleData) }
+            // 控制当前显示哪个界面的状态
+            var currentScreen by remember { mutableStateOf(ScreenState.HOME) }
 
-            // 新增：App 启动时，开启协程去抓取首页数据
+            // 记录选中的数据
+            var homeCategories by remember { mutableStateOf<List<Category>>(sampleData) }
+            var selectedAnime by remember { mutableStateOf<Anime?>(null) }
+            var currentPlayingUrl by remember { mutableStateOf<String?>(null) }
+
+            // 启动时抓取首页
             LaunchedEffect(Unit) {
                 thread {
                     val realData = AnimeParser.fetchHomePage()
                     if (realData.isNotEmpty()) {
-                        // 抓到了，回到主线程更新 UI
                         runOnUiThread { homeCategories = realData }
                     }
                 }
             }
 
-            if (currentPlayingUrl == null) {
-                // 把动态数据传给 HomeScreen
-                HomeScreen(categories = homeCategories) { clickedAnime ->
-                    Log.d(TAG, "你点击了: ${clickedAnime.title}, 详情页是: ${clickedAnime.detailUrl}")
-
-                    // TODO: 注意！现在我们点的是主页海报，拿到的是【详情页】(比如 /bangumi/123.html)
-                    // 而不是之前的【播放页】(比如 /playGV123-1-1.html)
-                    // 所以点击后，我们需要写个新方法，去详情页里把真实的播放页找出来，再调用 parseM3u8Url
+            // 根据状态切换 UI
+            when (currentScreen) {
+                ScreenState.HOME -> {
+                    HomeScreen(categories = homeCategories) { clickedAnime ->
+                        Log.d(TAG, "点击了海报，进入详情页: ${clickedAnime.detailUrl}")
+                        selectedAnime = clickedAnime
+                        currentScreen = ScreenState.DETAIL // 切换到详情页
+                    }
                 }
-            } else {
-                PlayerScreen(
-                    m3u8Url = currentPlayingUrl!!,
-                    onBack = { currentPlayingUrl = null }
-                )
+
+                ScreenState.DETAIL -> {
+                    DetailScreen(
+                        detailUrl = selectedAnime!!.detailUrl,
+                        onBack = { currentScreen = ScreenState.HOME }, // 返回首页
+                        onPlayEpisode = { episode ->
+                            Log.d(TAG, "点击了集数: ${episode.title}, 去解析播放直链...")
+                            thread {
+                                // 呼叫我们最初写的最核心的爬虫！
+                                val m3u8Url = AnimeParser.parseM3u8Url(episode.playUrl)
+                                if (m3u8Url != null) {
+                                    runOnUiThread {
+                                        currentPlayingUrl = m3u8Url
+                                        currentScreen = ScreenState.PLAYER // 解析成功，切换到播放页
+                                    }
+                                } else {
+                                    Log.e(TAG, "解析 m3u8 失败！")
+                                }
+                            }
+                        }
+                    )
+                }
+
+                ScreenState.PLAYER -> {
+                    PlayerScreen(
+                        m3u8Url = currentPlayingUrl!!,
+                        onBack = {
+                            currentPlayingUrl = null
+                            currentScreen = ScreenState.DETAIL // 从播放器返回，退回到详情页
+                        }
+                    )
+                }
             }
         }
     }

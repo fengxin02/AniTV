@@ -7,6 +7,16 @@ data class Anime(
 )
 
 data class Category(val title: String, val animeList: List<Anime>)
+data class Playlist(val name: String, val episodes: List<Episode>)
+data class Episode(val title: String, val playUrl: String)
+
+// 新增：动漫详情页数据模型
+data class AnimeDetail(
+    val title: String,
+    val coverUrl: String,
+    val description: String,     // 剧情简介
+    val playlists: List<Playlist>  // 所有的集数列表
+)
 
 // 兜底用的假数据
 val sampleData = listOf(

@@ -3,12 +3,15 @@ package fengxin.anitv.network
 import android.util.Base64
 import android.util.Log
 import fengxin.anitv.model.Anime
+import fengxin.anitv.model.AnimeDetail
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import java.net.URLDecoder
 import java.util.regex.Pattern
 import fengxin.anitv.model.Category
+import fengxin.anitv.model.Episode
+import fengxin.anitv.model.Playlist
 
 // 使用 object 关键字，让它成为一个可以随时调用的单例工具类
 object AnimeParser {
@@ -132,5 +135,94 @@ object AnimeParser {
         }
 
         return categoryList
+    }
+
+
+    // 新增：抓取详情页和选集列表
+    fun fetchAnimeDetail(detailUrl: String): AnimeDetail? {
+        Log.d(TAG, "🚀 开始抓取详情页: $detailUrl")
+        val request = Request.Builder()
+            .url(detailUrl)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            val htmlContent = response.body?.string() ?: return null
+            val document = Jsoup.parse(htmlContent)
+
+            // 1. 提取标题 (加入了新暗号 .slide-info-title)
+            // 1. 提取标题 (精准提取第一个，并且抛弃容易误伤的 .title 类名)
+            var title = document.select(".slide-info-title, .module-info-heading h1").first()?.text()
+
+            // 终极兜底方案：如果上面没抓到，直接从网页最顶部的 <title> 标签里切出名字
+            if (title.isNullOrEmpty()) {
+                title = document.select("title").text().substringBefore("_").substringBefore("-").trim()
+            }
+            if (title.isEmpty()) title = "未知标题"
+
+            // 2. 提取海报图片 (加入了新暗号 .detail-pic img)
+            var coverUrl = document.select(".module-info-poster img, .stui-content__thumb img, .picture img, .detail-pic img").attr("data-src")
+            if (coverUrl.isEmpty()) coverUrl = document.select(".module-info-poster img, .stui-content__thumb img, .detail-pic img").attr("src")
+            val fullCoverUrl = if (coverUrl.startsWith("http") || coverUrl.isEmpty()) coverUrl else "https://ani.girigirilove.com$coverUrl"
+
+            // 3. 提取剧情简介 (精准狙击，防止把网页按钮文字吸进来)
+            var description = document.select("#height_limit").text()
+            if (description.isEmpty()) {
+                // 如果没找到，再尝试其他备用方案，并使用 first() 确保只抓取第一块纯净文本
+                description = document.select(".module-info-introduction, .stui-content__detail .desc").first()?.text() ?: "暂无简介"
+            }
+
+            // 4. 提取播放列表（按线路/语言分类打包）
+            val playlists = mutableListOf<Playlist>()
+            val tabElements = document.select(".anthology-tab a")
+            val boxElements = document.select(".anthology-list-box")
+
+            // 检查是不是多线路结构 (有标签，且标签数量等于列表框数量)
+            if (tabElements.isNotEmpty() && tabElements.size == boxElements.size) {
+                for (i in tabElements.indices) {
+                    // ownText() 可以完美避开 <span> 里的数字，只拿 "繁中" 两个字
+                    val tabName = tabElements[i].ownText().replace(Regex("[^\\u4e00-\\u9fa5a-zA-Z0-9]"), "").trim()
+                    val finalTabName = if (tabName.isEmpty()) "播放列表 ${i + 1}" else tabName
+
+                    val episodes = mutableListOf<Episode>()
+                    // 只抓取对应这个标签的盒子里的 a 标签
+                    val aTags = boxElements[i].select("ul li a")
+                    for (aTag in aTags) {
+                        val epTitle = aTag.text()
+                        val epPlayUrl = aTag.attr("href")
+                        if (epTitle.isNotEmpty() && epPlayUrl.contains("play")) {
+                            val fullPlayUrl = if (epPlayUrl.startsWith("http")) epPlayUrl else "https://ani.girigirilove.com$epPlayUrl"
+                            episodes.add(Episode(epTitle, fullPlayUrl))
+                        }
+                    }
+                    if (episodes.isNotEmpty()) {
+                        playlists.add(Playlist(finalTabName, episodes))
+                    }
+                }
+            } else {
+                // 终极兜底：如果有些老番没有分繁简，只有一个列表，就沿用老方法
+                val episodes = mutableListOf<Episode>()
+                val playList = document.select(".module-play-list a, .stui-content__playlist a, .anthology-list-play a")
+                for (aTag in playList) {
+                    val epTitle = aTag.text()
+                    val epPlayUrl = aTag.attr("href")
+                    if (epTitle.isNotEmpty() && epPlayUrl.contains("play")) {
+                        val fullPlayUrl = if (epPlayUrl.startsWith("http")) epPlayUrl else "https://ani.girigirilove.com$epPlayUrl"
+                        episodes.add(Episode(epTitle, fullPlayUrl))
+                    }
+                }
+                if (episodes.isNotEmpty()) {
+                    playlists.add(Playlist("默认播放", episodes))
+                }
+            }
+
+            Log.d(TAG, "🎉 详情抓取成功！共找到 ${playlists.size} 个播放列表")
+            return AnimeDetail(title, fullCoverUrl, description, playlists)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "💥 详情页抓取发生错误: ${e.message}")
+        }
+        return null
     }
 }

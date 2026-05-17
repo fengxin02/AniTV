@@ -3,9 +3,11 @@ package fengxin.anitv.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +73,8 @@ fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode)
             }
             else -> {
                 val detail = animeDetail!!
+                var isDescFocused by remember { mutableStateOf(false) }
+
                 Row(modifier = Modifier.fillMaxSize().padding(40.dp)) {
 
                     // ═══════════════════════════════════
@@ -127,19 +131,24 @@ fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode)
                             Spacer(modifier = Modifier.height(14.dp))
                         }
 
-                        // ── 简介内容卡片 ──
+                        // ── 简介内容卡片（可获焦，获焦时自动滚到可见区域）──
                         item {
+                            val borderColor = if (isDescFocused) Accent else SurfaceBorder
+                            val borderWidth = if (isDescFocused) 2.dp else 1.dp
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .focusable()
+                                    .onFocusChanged { isDescFocused = it.isFocused }
                                     .clip(RoundedCornerShape(12.dp))
-                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
                                     .background(Surface)
+                                    .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 20.dp, vertical = 18.dp)
                             ) {
                                 Text(
                                     text = detail.description,
-                                    color = TextSecondary,
+                                    color = if (isDescFocused) TextPrimary else TextSecondary,
                                     fontSize = 16.sp,
                                     lineHeight = 28.sp
                                 )

@@ -2,39 +2,49 @@ package fengxin.anitv.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
-import kotlin.concurrent.thread
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import fengxin.anitv.model.AnimeDetail
 import fengxin.anitv.model.Episode
 import fengxin.anitv.network.AnimeParser
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.tv.material3.ButtonDefaults
-import androidx.tv.material3.Border
-import androidx.tv.material3.Glow
+import kotlin.concurrent.thread
+
+// 主题色定义
+private val Background = Color(0xFF0D1117)
+private val Surface = Color(0xFF161B22)
+private val SurfaceBorder = Color(0xFF30363D)
+private val Accent = Color(0xFFF78166)
+private val AccentPressed = Color(0xFFE06B50)
+private val TextPrimary = Color(0xFFF0F6FC)
+private val TextSecondary = Color(0xFFC9D1D9)
+private val TextMuted = Color(0xFF8B949E)
+private val BtnDefaultBg = Color(0xFF21262D)
+private val BtnDefaultText = Color(0xFFC9D1D9)
+
 @Composable
 fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode) -> Unit) {
-    // 监听返回键
     BackHandler(onBack = onBack)
 
     var animeDetail by remember { mutableStateOf<AnimeDetail?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // 进入页面时，立刻去后台线程抓取详情数据
     LaunchedEffect(detailUrl) {
         thread {
             val result = AnimeParser.fetchAnimeDetail(detailUrl)
@@ -43,102 +53,180 @@ fun DetailScreen(detailUrl: String, onBack: () -> Unit, onPlayEpisode: (Episode)
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF141414))) {
-        if (isLoading) {
-            // 简单的加载中提示
-            Text("正在努力加载详情...", color = Color.White, modifier = Modifier.padding(50.dp))
-        } else if (animeDetail == null) {
-            Text("加载失败，请按返回键重试", color = Color.Red, modifier = Modifier.padding(50.dp))
-        } else {
-            val detail = animeDetail!!
-            Row(modifier = Modifier.fillMaxSize().padding(32.dp)) {
-
-                // 左侧：海报和简介
-                Column(modifier = Modifier.weight(1f).padding(end = 32.dp)) {
-                    AsyncImage(
-                        model = detail.coverUrl,
-                        contentDescription = "海报",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.width(200.dp).height(300.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = detail.title,
-                        color = Color.White,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // 优化的简介显示：增加行高，并支持遥控器向下滚动浏览长文
-                    Text(
-                        text = detail.description,
-                        color = Color.LightGray,
-                        fontSize = 15.sp,
-                        lineHeight = 22.sp,
-                        modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
-                            .focusable() // ✨【极其关键】加上这行，遥控器才能选中这段字往下按！
-                    )
+    Box(modifier = Modifier.fillMaxSize().background(Background)) {
+        when {
+            isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("正在加载详情...", color = TextMuted, fontSize = 20.sp)
                 }
+            }
+            animeDetail == null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("加载失败", color = Accent, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("请按返回键重试", color = TextMuted, fontSize = 16.sp)
+                    }
+                }
+            }
+            else -> {
+                val detail = animeDetail!!
+                Row(modifier = Modifier.fillMaxSize().padding(40.dp)) {
 
-                // 右侧：选集网格列表 (支持多线路分类)
-                Column(modifier = Modifier.weight(2f)) {
-                    Text("选集播放", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // ═══════════════════════════════════
+                    // 左侧：海报 + 标题（固定不动）
+                    // ═══════════════════════════════════
+                    Column(
+                        modifier = Modifier.weight(0.28f).padding(end = 36.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        AsyncImage(
+                            model = detail.coverUrl,
+                            contentDescription = "海报",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .width(220.dp)
+                                .height(320.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(
+                            text = detail.title,
+                            color = TextPrimary,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
 
-                    // 用 LazyColumn 支持整个右侧区域的上下滑动
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    // ═══════════════════════════════════
+                    // 右侧：简介 + 剧集列表（整体可滚动）
+                    // ═══════════════════════════════════
+                    LazyColumn(
+                        modifier = Modifier.weight(0.72f).fillMaxHeight()
+                    ) {
+                        // ── 简介标题 ──
+                        item {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "▎",
+                                    color = Accent,
+                                    fontSize = 20.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "剧情简介",
+                                    color = TextPrimary,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                        }
+
+                        // ── 简介内容卡片 ──
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
+                                    .background(Surface)
+                                    .padding(horizontal = 20.dp, vertical = 18.dp)
+                            ) {
+                                Text(
+                                    text = detail.description,
+                                    color = TextSecondary,
+                                    fontSize = 16.sp,
+                                    lineHeight = 28.sp
+                                )
+                            }
+                        }
+
+                        // ── 分隔区域 ──
+                        item {
+                            Spacer(modifier = Modifier.height(32.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(SurfaceBorder)
+                            )
+                            Spacer(modifier = Modifier.height(28.dp))
+                        }
+
+                        // ── 剧集标题 ──
+                        item {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "▎",
+                                    color = Accent,
+                                    fontSize = 20.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "选集播放",
+                                    color = TextPrimary,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(18.dp))
+                        }
+
+                        // ── 各线路剧集网格 ──
                         detail.playlists.forEach { playlist ->
-
-                            // 1. 渲染线路标题 (例如 "繁中", "简中")
                             item {
                                 Text(
                                     text = "▶ ${playlist.name}",
-                                    color = Color(0xFFE50914),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                                    color = TextMuted,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(bottom = 12.dp)
                                 )
                             }
 
-                            // 2. 将这一组集数按“每行 4 个”切块
-                            val chunkedEpisodes = playlist.episodes.chunked(4)
-
+                            val chunkedEpisodes = playlist.episodes.chunked(5)
                             items(chunkedEpisodes.size) { rowIndex ->
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.padding(bottom = 12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.padding(bottom = 10.dp)
                                 ) {
                                     chunkedEpisodes[rowIndex].forEach { episode ->
                                         Button(
                                             onClick = { onPlayEpisode(episode) },
-                                            // 固定宽度，让排版像强迫症一样整齐
-                                            modifier = Modifier.width(80.dp),
-
+                                            modifier = Modifier
+                                                .width(88.dp)
+                                                .height(42.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
                                             colors = ButtonDefaults.colors(
-                                                // 1. 普通状态：使用你喜欢的那张图里的深灰色 (#323232)
-                                                containerColor = Color(0xFF323232),
-                                                contentColor = Color.White,
-
-                                                // 2. 选中（获焦）状态：变成纯白色，文字变黑，对比度极高，一眼就能看出在哪
-                                                focusedContainerColor = Color.White,
-                                                focusedContentColor = Color.Black,
-
-                                                // 3. 按下状态：稍微深一点的灰色
-                                                pressedContainerColor = Color.LightGray,
-                                                pressedContentColor = Color.Black
+                                                containerColor = BtnDefaultBg,
+                                                contentColor = BtnDefaultText,
+                                                focusedContainerColor = Accent,
+                                                focusedContentColor = Color.White,
+                                                pressedContainerColor = AccentPressed,
+                                                pressedContentColor = Color.White
                                             )
-
                                         ) {
-                                            // 注意：内部 Text 的颜色已经由 colors 统一接管了，不需要再单独写 Color.White
-                                            Text(text = episode.title)
+                                            Text(
+                                                text = episode.title,
+                                                fontSize = 13.sp,
+                                                maxLines = 1
+                                            )
                                         }
                                     }
                                 }
                             }
+
+                            // 线路之间的间距
+                            item { Spacer(modifier = Modifier.height(8.dp)) }
                         }
+
+                        // 底部留白，避免最后一行被边缘遮挡
+                        item { Spacer(modifier = Modifier.height(48.dp)) }
                     }
                 }
             }

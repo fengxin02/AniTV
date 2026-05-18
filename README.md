@@ -1,6 +1,8 @@
 ##  AniTV - Android TV 智能原生影视聚合客户端
 一个专门为大屏智能电视（Android TV / Box）打造的流媒体聚合客户端。基于最新的 Jetpack Compose 现代 UI 框架开发，底层搭载大屏最强音视频解码引擎 Google Media3 ExoPlayer
 
+<img width="1920" height="1080" alt="Screenshot_20260518_135250" src="https://github.com/user-attachments/assets/5a1f8c3f-d06c-48f9-abe3-e49cc979409b" />
+
 ---
 
 ##  核心亮点与工程架构
